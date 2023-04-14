@@ -1,2 +1,0 @@
-import ttkbootstrap as tk
-
