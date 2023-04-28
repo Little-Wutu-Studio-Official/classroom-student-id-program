@@ -6,5 +6,6 @@
 
 #### Installation tutorial
 
-1. Click Install.exe
+1. Download the software zip archive and unzip it
+2. Run install.exe to install
 
