@@ -4,6 +4,7 @@ import os
 import sys
 
 
+
 def draw_student_number(min_number, max_number):
     return random.randint(min_number, max_number)
 
@@ -16,6 +17,7 @@ def update_label():
 
 
 def save_range():
+    load_range()
     min_number = min_entry.get()
     max_number = max_entry.get()
     with open('range.txt', 'w') as f:
@@ -28,10 +30,12 @@ def load_range():
     if os.path.exists('range.txt'):
         with open('range.txt', 'r') as f:
             min_number, max_number = f.read().splitlines()
-            min_entry.delete(0, tk.END)
-            min_entry.insert(0, min_number)
-            max_entry.delete(0, tk.END)
-            max_entry.insert(0, max_number)
+        min_entry.delete(0, tk.END)
+        min_entry.insert(0, min_number)
+        max_entry.delete(0, tk.END)
+        max_entry.insert(0, max_number)
+    else:
+        open_range_window()
 
 
 def open_range_window():
@@ -58,6 +62,10 @@ def open_range_window():
     button.pack()
 
 
+def hide_window(event):
+    pass
+
+
 root = tk.Tk()
 root.title("抽取学号")
 root.attributes('-topmost', True)
@@ -75,5 +83,11 @@ min_entry = tk.Entry(root)
 max_entry = tk.Entry(root)
 
 load_range()
+
+credit_label = tk.Label(root, text="程序制作by：小於菟工作室、刘贞", font=("KaiTi", 9), anchor='se')
+credit_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+# Bind the <Configure> event to the hide_window function
+root.bind("<Configure>", hide_window)
 
 root.mainloop()
