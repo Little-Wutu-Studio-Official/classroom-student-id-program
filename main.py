@@ -34,7 +34,7 @@ def load_range():
             max_entry.delete(0, tk.END)
             max_entry.insert(0, max_number)
     else:
-        result = tk.messagebox.askyesno("初始化学号范围", "系统检测到您没有初始化学号范围，请设置后在抽学号")
+        result = tk.messagebox.askyesno("初始化学号范围", "系统检测到您没有初始化学号范围，请设置后再抽学号")
         if result:
             open_range_window()
         else:
@@ -65,7 +65,7 @@ def open_range_window():
     button.pack()
 
 
-def hide_window(event):
+def hide_window():
     pass
 
 
