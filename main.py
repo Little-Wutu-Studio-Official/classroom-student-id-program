@@ -1,8 +1,8 @@
 import random
 import tkinter as tk
+import tkinter.messagebox
 import os
 import sys
-
 
 
 def draw_student_number(min_number, max_number):
@@ -17,25 +17,28 @@ def update_label():
 
 
 def save_range():
-    load_range()
     min_number = min_entry.get()
     max_number = max_entry.get()
-    with open('range.txt', 'w') as f:
+    with open('./ranges/range.txt', 'w') as f:
         f.write(f"{min_number}\n{max_number}")
     root.destroy()
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
 def load_range():
-    if os.path.exists('range.txt'):
-        with open('range.txt', 'r') as f:
+    if os.path.exists('./ranges/range.txt'):
+        with open('./ranges/range.txt', 'r') as f:
             min_number, max_number = f.read().splitlines()
-        min_entry.delete(0, tk.END)
-        min_entry.insert(0, min_number)
-        max_entry.delete(0, tk.END)
-        max_entry.insert(0, max_number)
+            min_entry.delete(0, tk.END)
+            min_entry.insert(0, min_number)
+            max_entry.delete(0, tk.END)
+            max_entry.insert(0, max_number)
     else:
-        open_range_window()
+        result = tk.messagebox.askyesno("初始化学号范围", "系统检测到您没有初始化学号范围，请设置后在抽学号")
+        if result:
+            open_range_window()
+        else:
+            root.destroy()
 
 
 def open_range_window():
