@@ -65,8 +65,19 @@ def open_range_window():
     button.pack()
 
 
-def hide_window():
-    pass
+def create_float_window():
+    float_window = tk.Toplevel(root)
+    float_window.geometry("100x30")
+    float_window.overrideredirect(True)
+    float_window.attributes('-topmost', True)
+
+    button = tk.Button(float_window, text="显示抽学号程序", command=lambda: show_main_window(float_window))
+    button.pack(fill=tk.BOTH, expand=True)
+    root.withdraw()
+
+def show_main_window(float_window):
+    root.deiconify()
+    float_window.destroy()
 
 
 root = tk.Tk()
@@ -79,6 +90,9 @@ label.pack()
 button = tk.Button(root, text="抽取学号", command=update_label)
 button.pack()
 
+button = tk.Button(root, text="点击缩小窗口", command=create_float_window)
+button.pack()
+
 button = tk.Button(root, text="修改学号范围", command=open_range_window)
 button.pack()
 
@@ -89,8 +103,5 @@ load_range()
 
 credit_label = tk.Label(root, text="程序制作by：小於菟工作室、刘贞", font=("KaiTi", 9), anchor='se')
 credit_label.pack(side=tk.BOTTOM, fill=tk.X)
-
-# Bind the <Configure> event to the hide_window function
-root.bind("<Configure>", hide_window)
 
 root.mainloop()
