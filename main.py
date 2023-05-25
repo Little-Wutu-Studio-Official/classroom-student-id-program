@@ -4,6 +4,9 @@ import tkinter.messagebox
 import os
 import sys
 
+x = None
+y = None
+
 
 def draw_student_number(min_number, max_number):
     return random.randint(min_number, max_number)
@@ -20,19 +23,34 @@ def save_range():
     min_number = min_entry.get()
     max_number = max_entry.get()
     with open('./ranges/range.txt', 'w') as f:
-        f.write(f"{min_number}\n{max_number}")
+        f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
     root.destroy()
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
 def load_range():
+    global initial_x, initial_y
     if os.path.exists('./ranges/range.txt'):
-        with open('./ranges/range.txt', 'r') as f:
-            min_number, max_number = f.read().splitlines()
-            min_entry.delete(0, tk.END)
-            min_entry.insert(0, min_number)
-            max_entry.delete(0, tk.END)
-            max_entry.insert(0, max_number)
+        try:
+            with open('./ranges/range.txt', 'r') as f:
+                min_number, max_number, initial_x, initial_y = f.read().splitlines()
+                min_entry.delete(0, tk.END)
+                min_entry.insert(0, min_number)
+                max_entry.delete(0, tk.END)
+                max_entry.insert(0, max_number)
+            initial_x = int(initial_x)
+            initial_y = int(initial_y)
+        except:
+            with open('./ranges/range.txt', 'r') as f:
+                min_number, max_number = f.read().splitlines()
+                max_entry.delete(0, tk.END)
+                max_entry.insert(0, max_number)
+                max_entry.delete(0, tk.END)
+                max_entry.insert(0, max_number)
+            initial_x = 0
+            initial_y = 0
+            save_range()
+
     else:
         result = tk.messagebox.askyesno("初始化学号范围", "系统检测到您没有初始化学号范围，请设置后再抽学号")
         if result:
@@ -65,19 +83,60 @@ def open_range_window():
     button.pack()
 
 
+initial_x = 0
+initial_y = 0
+
+
 def create_float_window():
+    global initial_x, initial_y
     float_window = tk.Toplevel(root)
-    float_window.geometry("100x30")
+    float_window.geometry(f"100x30+{initial_x}+{initial_y}")
     float_window.overrideredirect(True)
     float_window.attributes('-topmost', True)
 
     button = tk.Button(float_window, text="显示抽学号程序", command=lambda: show_main_window(float_window))
     button.pack(fill=tk.BOTH, expand=True)
+
+    # Make the window draggable
+    float_window.bind("<ButtonPress-1>", lambda event: start_move(event, float_window))
+    float_window.bind("<ButtonRelease-1>", lambda event: stop_move(event, float_window))
+    float_window.bind("<B1-Motion>", lambda event: do_move(event, float_window))
     root.withdraw()
 
+
+def has_moved(float_window):
+    return float_window.winfo_x() != initial_x or float_window.winfo_y() != initial_y
+
+
 def show_main_window(float_window):
-    root.deiconify()
-    float_window.destroy()
+    if not has_moved(float_window):
+        root.deiconify()
+        float_window.destroy()
+        save_range()
+
+
+def start_move(event, float_window):
+    global x, y
+    x = event.x
+    y = event.y
+
+
+def stop_move(event, float_window):
+    global x, y
+    x = None
+    y = None
+    global initial_x, initial_y
+    initial_x = float_window.winfo_x()
+    initial_y = float_window.winfo_y()
+
+
+
+def do_move(event, float_window):
+    deltax = event.x - x
+    deltay = event.y - y
+    x_ = float_window.winfo_x() + deltax
+    y_ = float_window.winfo_y() + deltay
+    float_window.geometry(f"+{x_}+{y_}")
 
 
 root = tk.Tk()
@@ -100,6 +159,7 @@ min_entry = tk.Entry(root)
 max_entry = tk.Entry(root)
 
 load_range()
+
 
 credit_label = tk.Label(root, text="程序制作by：小於菟工作室、刘贞", font=("KaiTi", 9), anchor='se')
 credit_label.pack(side=tk.BOTTOM, fill=tk.X)
