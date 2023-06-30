@@ -3,6 +3,8 @@ import tkinter as tk
 import tkinter.messagebox
 import os
 import sys
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
 x = None
 y = None
@@ -64,6 +66,7 @@ def open_range_window():
     range_window = tk.Toplevel(root)
     range_window.title("修改学号范围")
     range_window.grab_set()
+    range_window.iconbitmap('./ico.ico')
 
     label = tk.Label(range_window, text="最小学号: ")
     label.pack()
@@ -79,7 +82,7 @@ def open_range_window():
     max_entry = tk.Entry(range_window)
     max_entry.pack()
 
-    button = tk.Button(range_window, text="保存范围", command=save_range)
+    button = ttk.Button(range_window, text="保存范围", command=save_range)
     button.pack()
 
 
@@ -90,11 +93,11 @@ initial_y = 0
 def create_float_window():
     global initial_x, initial_y
     float_window = tk.Toplevel(root)
-    float_window.geometry(f"100x30+{initial_x}+{initial_y}")
+    float_window.geometry(f"130x40+{initial_x}+{initial_y}")
     float_window.overrideredirect(True)
     float_window.attributes('-topmost', True)
 
-    button = tk.Button(float_window, text="显示抽学号程序", command=lambda: show_main_window(float_window))
+    button = ttk.Button(float_window, text="显示抽学号程序", command=lambda: show_main_window(float_window))
     button.pack(fill=tk.BOTH, expand=True)
 
     # Make the window draggable
@@ -130,7 +133,6 @@ def stop_move(event, float_window):
     initial_y = float_window.winfo_y()
 
 
-
 def do_move(event, float_window):
     deltax = event.x - x
     deltay = event.y - y
@@ -139,20 +141,22 @@ def do_move(event, float_window):
     float_window.geometry(f"+{x_}+{y_}")
 
 
-root = tk.Tk()
+tem = ["superhero", "vapor", "cyborg", "solar", "cosmo", "flatly", "journal", "litera", "minty", "pulse", "morph"]
+root = ttk.Window(themename=tem[random.randint(0, 10)])
 root.title("抽取学号")
 root.attributes('-topmost', True)
+root.iconbitmap('./ico.ico')
 
 label = tk.Label(root, text="被抽中的学号是: ")
 label.pack()
 
-button = tk.Button(root, text="抽取学号", command=update_label)
+button = ttk.Button(root, text="抽取学号", command=update_label, bootstyle="outline", width=30)
 button.pack()
 
-button = tk.Button(root, text="点击缩小窗口", command=create_float_window)
+button = ttk.Button(root, text="点击缩小窗口", command=create_float_window, bootstyle="outline", width=30)
 button.pack()
 
-button = tk.Button(root, text="修改学号范围", command=open_range_window)
+button = ttk.Button(root, text="修改学号范围", command=open_range_window, bootstyle="outline", width=30)
 button.pack()
 
 min_entry = tk.Entry(root)
@@ -160,8 +164,7 @@ max_entry = tk.Entry(root)
 
 load_range()
 
-
-credit_label = tk.Label(root, text="程序制作by：小於菟工作室、刘贞", font=("KaiTi", 9), anchor='se')
+credit_label = tk.Label(root, text="程序制作by：小於菟工作室、刘贞", font=("KaiTi", 12), anchor='se')
 credit_label.pack(side=tk.BOTTOM, fill=tk.X)
 
 root.mainloop()
