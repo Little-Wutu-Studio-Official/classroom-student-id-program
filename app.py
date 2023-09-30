@@ -1,4 +1,4 @@
-
+import threading
 import random
 import tkinter as tk
 import tkinter.messagebox
@@ -6,13 +6,30 @@ import os
 import sys
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+from tkinter import scrolledtext
+import time
 
 x = None
 y = None
 
 
+def get_student_number(min_number, max_number):
+    return random.randint(min_number, max_number)
+
+
 def draw_student_number(min_number, max_number):
     return random.randint(min_number, max_number)
+
+
+def update_label():
+    min_number = int(min_entry.get())
+    max_number = int(max_entry.get())
+
+    # 清空滚动文本框内容
+    scroll_text.delete(1.0, tk.END)
+
+    t = threading.Thread(target=draw_numbers, args=(min_number, max_number))
+    t.start()
 
 
 def update_label1():
@@ -28,7 +45,7 @@ def save_range():
     with open('./ranges/range.txt', 'w') as f:
         f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
     root.destroy()
-    os.execl(sys.executable, *sys.argv)
+    os.execl(sys.executable, sys.executable, *sys.argv)
 
 
 def load_range():
@@ -52,14 +69,13 @@ def load_range():
                 max_entry.insert(0, max_number)
             initial_x = 0
             initial_y = 0
-            save_range()
 
     else:
         result = tk.messagebox.askyesno("初始化学号范围", "系统检测到您没有初始化学号范围，请设置后再抽学号")
         if result:
             open_range_window()
         else:
-            root.destroy()
+            os.execl(sys.executable, *sys.argv)
 
 
 def open_range_window():
@@ -141,31 +157,76 @@ def do_move(event, float_window):
     float_window.geometry(f"+{x_}+{y_}")
 
 
+def draw_numbers(min_number, max_number):
+    b = get_student_number(min_number, max_number)
+    for i in range(b - min_number):
+        label.config(text=f"学号滚动区显示为{i + min_number}")
+        scroll_text.insert(tk.END, f"当前学号是: {i + min_number}\n")
+        scroll_text.see(tk.END)
+        root.update()
+        c = b - min_number - i
+        e = c / (b - min_number)
+        time.sleep(0.05 / e)
+
+
+def on_mode_change(event):
+    selected_mode = mode_combobox.get()
+    MS.set(selected_mode)
+    if selected_mode == "炫酷可视模式":
+        try:
+            buttona.pack_forget()
+            buttonb.pack_forget()
+        except:
+            pass
+        label.pack()
+        button_get_ps.pack_forget()
+        button_get_xk.pack()
+        buttona.pack()
+        buttonb.pack()
+        scroll_text.pack()
+    else:
+        try:
+            buttona.pack_forget()
+            buttonb.pack_forget()
+        except:
+            pass
+        scroll_text.pack_forget()
+        button_get_xk.pack_forget()
+        label.pack()
+        button_get_ps.pack()
+        buttona.pack()
+        buttonb.pack()
+
 
 tem = ["superhero", "vapor", "cyborg", "solar", "cosmo", "flatly", "journal", "litera", "minty", "pulse", "morph"]
 root = ttk.Window(themename=tem[random.randint(0, 10)])
 root.title("抽取学号")
 root.attributes('-topmost', True)
 root.iconbitmap('./ico.ico')
+MS = tk.StringVar()
+MS.set("请选择模式")
 
 label = tk.Label(root, text="被抽中的学号是: ")
-label.pack()
 
-button = ttk.Button(root, text="抽取学号", command=update_label1, bootstyle="outline", width=30)
-button.pack()
+button_get_xk = ttk.Button(root, text="抽取学号", command=update_label, bootstyle="outline", width=30)
+button_get_ps = ttk.Button(root, text="抽取学号", command=update_label1, bootstyle="outline", width=30)
 
-button = ttk.Button(root, text="点击缩小窗口", command=create_float_window, bootstyle="outline", width=30)
-button.pack()
+buttona = ttk.Button(root, text="点击缩小窗口", command=create_float_window, bootstyle="outline", width=30)
 
-button = ttk.Button(root, text="修改学号范围", command=open_range_window, bootstyle="outline", width=30)
-button.pack()
+buttonb = ttk.Button(root, text="修改学号范围", command=open_range_window, bootstyle="outline", width=30)
 
 min_entry = tk.Entry(root)
 max_entry = tk.Entry(root)
+
+scroll_text = scrolledtext.ScrolledText(root, height=5, width=30)
 
 load_range()
 
 credit_label = tk.Label(root, text="程序制作by：小於菟工作室、刘贞", font=("KaiTi", 12), anchor='se')
 credit_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+mode_combobox = ttk.Combobox(root, values=["炫酷可视模式", "朴素快速模式"], textvariable=MS)
+mode_combobox.pack(side=tk.BOTTOM, fill=tk.X)
+mode_combobox.bind("<<ComboboxSelected>>", on_mode_change)
 
 root.mainloop()

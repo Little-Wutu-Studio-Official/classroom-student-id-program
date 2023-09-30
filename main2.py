@@ -1,4 +1,4 @@
-
+import threading
 import random
 import tkinter as tk
 import tkinter.messagebox
@@ -6,20 +6,26 @@ import os
 import sys
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+from tkinter import scrolledtext
+import time
 
 x = None
 y = None
 
 
-def draw_student_number(min_number, max_number):
+def get_student_number(min_number, max_number):
     return random.randint(min_number, max_number)
 
 
-def update_label1():
+def update_label():
     min_number = int(min_entry.get())
     max_number = int(max_entry.get())
-    drawn_number = draw_student_number(min_number, max_number)
-    label.config(text=f"被抽中的学号是: {drawn_number}")
+
+    # 清空滚动文本框内容
+    scroll_text.delete(1.0, tk.END)
+
+    t = threading.Thread(target=draw_numbers, args=(min_number, max_number))
+    t.start()
 
 
 def save_range():
@@ -27,8 +33,7 @@ def save_range():
     max_number = max_entry.get()
     with open('./ranges/range.txt', 'w') as f:
         f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
-    root.destroy()
-    os.execl(sys.executable, *sys.argv)
+    os.execl(sys.executable, sys.executable, *sys.argv)
 
 
 def load_range():
@@ -63,6 +68,7 @@ def load_range():
 
 
 def open_range_window():
+    global range_window
     root.attributes('-topmost', False)
     range_window = tk.Toplevel(root)
     range_window.title("修改学号范围")
@@ -141,6 +147,17 @@ def do_move(event, float_window):
     float_window.geometry(f"+{x_}+{y_}")
 
 
+def draw_numbers(min_number, max_number):
+    b = get_student_number(min_number, max_number)
+    for i in range(b - min_number):
+        label.config(text=f"学号滚动区显示为{i+min_number}")
+        scroll_text.insert(tk.END, f"当前学号是: {i+min_number}\n")
+        scroll_text.see(tk.END)
+        root.update()
+        c = b - min_number - i
+        e = c / (b - min_number)
+        time.sleep(0.05/e)
+
 
 tem = ["superhero", "vapor", "cyborg", "solar", "cosmo", "flatly", "journal", "litera", "minty", "pulse", "morph"]
 root = ttk.Window(themename=tem[random.randint(0, 10)])
@@ -151,7 +168,7 @@ root.iconbitmap('./ico.ico')
 label = tk.Label(root, text="被抽中的学号是: ")
 label.pack()
 
-button = ttk.Button(root, text="抽取学号", command=update_label1, bootstyle="outline", width=30)
+button = ttk.Button(root, text="抽取学号", command=update_label, bootstyle="outline", width=30)
 button.pack()
 
 button = ttk.Button(root, text="点击缩小窗口", command=create_float_window, bootstyle="outline", width=30)
@@ -162,6 +179,9 @@ button.pack()
 
 min_entry = tk.Entry(root)
 max_entry = tk.Entry(root)
+
+scroll_text = scrolledtext.ScrolledText(root, height=5, width=30)
+scroll_text.pack()
 
 load_range()
 
