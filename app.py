@@ -8,24 +8,47 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from tkinter import scrolledtext
 import time
+import pickle
+from ttkbootstrap import Style
 
 x = None
 y = None
 
 
-def get_student_number(min_number, max_number):
-    return random.randint(min_number, max_number)
+def contains_all_numbers_between(lst, start, end):
+    expected_numbers = set(range(start, end + 1))
+    list_set = set(lst)
+    return expected_numbers.issubset(list_set)
 
 
 def draw_student_number(min_number, max_number):
-    return random.randint(min_number, max_number)
+    if checkbutton_var.get():
+        while True:
+            a = random.randint(min_number, max_number)
+            if a in elselist and not contains_all_numbers_between(elselist, min_number, max_number):
+                pass
+            elif contains_all_numbers_between(elselist, min_number, max_number):
+                elselist.clear()
+                tkinter.messagebox.showinfo("信息", "该抽取项目内所有人都已经被抽取过了，即将自动重置……")
+                else_files[combobox2.get()] = elselist
+                print(else_files)
+                save_else()
+            else:
+                elselist.append(a)
+                print(elselist)
+                else_files[combobox2.get()] = elselist
+                print(else_files)
+                save_else()
+                return a
+                break
+    else:
+        return random.randint(min_number, max_number)
 
 
 def update_label():
     min_number = int(min_entry.get())
     max_number = int(max_entry.get())
 
-    # 清空滚动文本框内容
     scroll_text.delete(1.0, tk.END)
 
     t = threading.Thread(target=draw_numbers, args=(min_number, max_number))
@@ -40,12 +63,70 @@ def update_label1():
 
 
 def save_range():
-    min_number = min_entry.get()
-    max_number = max_entry.get()
-    with open('./ranges/range.txt', 'w') as f:
-        f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
-    root.destroy()
-    os.execl(sys.executable, sys.executable, *sys.argv)
+    x = False
+    if else_files != {}:
+        result = tk.messagebox.askyesno("保存？", "请注意，如果修改了学号范围，您的抽取项目将清空！")
+        if result:
+            os.remove('./ranges/else.pickle')
+            try:
+                min_number = int(min_entry.get())
+                max_number = int(max_entry.get())
+                if min_number >= max_number:
+                    tkinter.messagebox.showerror("错误", "您输入的最小学号大于或等于最大学号！请重新输入。")
+                    x = True
+            except:
+                tkinter.messagebox.showerror("错误", "您输入的学号范围不是整数！请重新输入。")
+                x = True
+            if not x:
+                try:
+                    with open('./ranges/range.txt', 'w') as f:
+                        f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
+                    range_window.destroy()
+                    os.execl(sys.executable, sys.executable, *sys.argv)
+                except:
+                    tkinter.messagebox.showerror("错误", "程序写入范围失败，请重新安装并不要改变预置路径！")
+            else:
+                pass
+        else:
+            pass
+    else:
+        try:
+            min_number = int(min_entry.get())
+            max_number = int(max_entry.get())
+            if min_number >= max_number:
+                tkinter.messagebox.showerror("错误", "您输入的最小学号大于或等于最大学号！请重新输入。")
+                x = True
+        except:
+            tkinter.messagebox.showerror("错误", "您输入的学号范围不是整数！请重新输入。")
+            x = True
+        if not x:
+            try:
+                with open('./ranges/range.txt', 'w') as f:
+                    f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
+                range_window.destroy()
+                os.execl(sys.executable, sys.executable, *sys.argv)
+            except:
+                tkinter.messagebox.showerror("错误", "程序写入范围失败，请重新安装并不要改变预置路径！")
+        else:
+            pass
+
+
+
+def new_else_list():
+    name = name_else.get()
+    if name in else_files:
+        tkinter.messagebox.showerror("错误", "您输入了一个已经存在的名称，请重新输入")
+    else:
+        else_files[name] = []
+        with open('./ranges/else.pickle', 'wb') as f:
+            pickle.dump(else_files, f)
+        else_window.destroy()
+        tk.messagebox.askyesno("增加新的项目", "为了使得更改生效，请手动重启程序。")
+
+
+def save_else():
+    with open('./ranges/else.pickle', 'wb') as f:
+        pickle.dump(else_files, f)
 
 
 def load_range():
@@ -78,7 +159,20 @@ def load_range():
             os.execl(sys.executable, *sys.argv)
 
 
+def load_else():
+    global else_files, keys_list
+    if os.path.exists('./ranges/else.pickle'):
+        with open('./ranges/else.pickle', 'rb') as f:
+            else_files = pickle.load(f)
+    else:
+        else_files = {}
+        with open('./ranges/else.pickle', 'wb') as f:
+            pickle.dump(else_files, f)
+    keys_list = list(else_files.keys())
+
+
 def open_range_window():
+    global range_window
     root.attributes('-topmost', False)
     range_window = tk.Toplevel(root)
     range_window.title("修改学号范围")
@@ -100,6 +194,25 @@ def open_range_window():
     max_entry.pack()
 
     button = ttk.Button(range_window, text="保存范围", command=save_range)
+    button.pack()
+
+
+def open_else_window():
+    global else_window
+    root.attributes('-topmost', False)
+    else_window = tk.Toplevel(root)
+    else_window.title("创建一个新的抽取项目")
+    else_window.grab_set()
+    else_window.iconbitmap('./ico.ico')
+
+    label = tk.Label(else_window, text="请输入名称")
+    label.pack()
+
+    global name_else
+    name_else = tk.Entry(else_window)
+    name_else.pack()
+
+    button = ttk.Button(else_window, text="创建", command=new_else_list)
     button.pack()
 
 
@@ -158,20 +271,21 @@ def do_move(event, float_window):
 
 
 def draw_numbers(min_number, max_number):
-    b = get_student_number(min_number, max_number)
-    for i in range(b - min_number):
+    b = draw_student_number(min_number, max_number)
+    for i in range(b - min_number + 1):
         label.config(text=f"学号滚动区显示为{i + min_number}")
         scroll_text.insert(tk.END, f"当前学号是: {i + min_number}\n")
         scroll_text.see(tk.END)
         root.update()
         c = b - min_number - i
         e = c / (b - min_number)
-        time.sleep(0.05 / e)
+        if e != 0:
+            time.sleep(0.05 / e)
 
 
 def on_mode_change(event):
-    selected_mode = mode_combobox.get()
-    MS.set(selected_mode)
+    selected_mode = mode_combobox1.get()
+    MS1.set(selected_mode)
     if selected_mode == "炫酷可视模式":
         try:
             buttona.pack_forget()
@@ -198,16 +312,32 @@ def on_mode_change(event):
         buttonb.pack()
 
 
+def on_else_change():
+    if checkbutton_var.get():
+        combobox2.pack(side=tk.BOTTOM, fill=tk.X)
+        buttonc.pack()
+    else:
+        combobox2.pack_forget()
+        buttonc.pack_forget()
+
+
+def on_else_list_change(event):
+    global elselist
+    selected_mode = combobox2.get()
+    XM.set(selected_mode)
+    elselist = else_files[selected_mode]
+
+
 tem = ["superhero", "vapor", "cyborg", "solar", "cosmo", "flatly", "journal", "litera", "minty", "pulse", "morph"]
 root = ttk.Window(themename=tem[random.randint(0, 10)])
 root.title("抽取学号")
 root.attributes('-topmost', True)
 root.iconbitmap('./ico.ico')
-MS = tk.StringVar()
-MS.set("请选择模式")
-
+MS1 = tk.StringVar()
+MS1.set("请选择模式")
+XM = tk.StringVar()
+XM.set("在此处选择抽取项目")
 label = tk.Label(root, text="被抽中的学号是: ")
-
 button_get_xk = ttk.Button(root, text="抽取学号", command=update_label, bootstyle="outline", width=30)
 button_get_ps = ttk.Button(root, text="抽取学号", command=update_label1, bootstyle="outline", width=30)
 
@@ -215,18 +345,25 @@ buttona = ttk.Button(root, text="点击缩小窗口", command=create_float_windo
 
 buttonb = ttk.Button(root, text="修改学号范围", command=open_range_window, bootstyle="outline", width=30)
 
+buttonc = ttk.Button(root, text="创建一个新的抽取项目", command=open_else_window, bootstyle="outline", width=30)
 min_entry = tk.Entry(root)
 max_entry = tk.Entry(root)
 
 scroll_text = scrolledtext.ScrolledText(root, height=5, width=30)
 
 load_range()
+load_else()
 
 credit_label = tk.Label(root, text="程序制作by：小於菟工作室、刘贞", font=("KaiTi", 12), anchor='se')
 credit_label.pack(side=tk.BOTTOM, fill=tk.X)
 
-mode_combobox = ttk.Combobox(root, values=["炫酷可视模式", "朴素快速模式"], textvariable=MS)
-mode_combobox.pack(side=tk.BOTTOM, fill=tk.X)
-mode_combobox.bind("<<ComboboxSelected>>", on_mode_change)
-
+mode_combobox1 = ttk.Combobox(root, values=["炫酷可视模式", "朴素快速模式"], textvariable=MS1)
+mode_combobox1.pack(side=tk.BOTTOM, fill=tk.X)
+mode_combobox1.bind("<<ComboboxSelected>>", on_mode_change)
+checkbutton_var = tk.BooleanVar(value=False)
+checkbutton = ttk.Checkbutton(root, text="启用避免单轮重复抽取", variable=checkbutton_var, command=on_else_change,
+                              bootstyle="square-toggle")
+checkbutton.pack()
+combobox2 = ttk.Combobox(root, values=keys_list, textvariable=XM)
+combobox2.bind("<<ComboboxSelected>>", on_else_list_change)
 root.mainloop()
