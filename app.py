@@ -421,7 +421,7 @@ def get_saved_window_position(window):
 
 def save_window_position(window, event):
     x, y = window.winfo_x(), window.winfo_y()
-    with open('window_position.pickle', 'wb') as file:
+    with open('./ranges/window_position.pickle', 'wb') as file:
         pickle.dump((x, y), file)
 
 
