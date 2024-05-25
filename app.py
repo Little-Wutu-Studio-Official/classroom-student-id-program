@@ -35,7 +35,6 @@ def contains_all_numbers_between(lst, start, end):
     return expected_numbers.issubset(list_set)  # 检查给定范围内的所有数字是否都包含在列表中
 
 
-
 # 从指定范围内抽取学号
 def draw_student_number(min_number, max_number):
     # 如果避免单轮重复抽取复选框被选中（else.pickle文件中存在抽学号项目）
@@ -63,7 +62,6 @@ def draw_student_number(min_number, max_number):
     else:
         # 如果复选框未被选中，则直接随机抽取学号
         return random.randint(min_number, max_number)
-
 
 
 # 更新抽取框
@@ -95,7 +93,8 @@ def update_label1():
 
 # 保存范围设置
 def save_range():
-    x = False
+    global max_number, min_number
+    w = False
     # 检查是否抽取项目
     if else_files != {}:
         # 提示用户保存
@@ -103,52 +102,27 @@ def save_range():
         if result:
             # 如果用户选择保存，则删除抽学号项目文件并保存新的范围
             os.remove('./ranges/else.pickle')
-            try:
-                min_number = int(min_entry.get())
-                max_number = int(max_entry.get())
-                if min_number >= max_number:
-                    tkinter.messagebox.showerror("错误", "您输入的最小学号大于或等于最大学号！请重新输入。")
-                    x = True
-            except:
-                tkinter.messagebox.showerror("错误", "您输入的学号范围不是整数！请重新输入。")
-                x = True
-            if not x:
-                try:
-                    # 写入范围到文件
-                    with open('./ranges/range.txt', 'w') as f:
-                        f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
-                    range_window.destroy()
-                    # 重新启动应用程序
-                    os.execl(sys.executable, sys.executable, *sys.argv)
-                except:
-                    tkinter.messagebox.showerror("错误", "程序写入范围失败，请重新安装并不要改变预置路径！")
-            else:
-                pass
-        else:
-            pass
-    # 如果项目文件不存在，不提示有关抽取项目的内容，则保存新的范围
-    else:
+    try:
+        min_number = int(min_entry.get())
+        max_number = int(max_entry.get())
+        if min_number >= max_number:
+            tkinter.messagebox.showerror("错误", "您输入的最小学号大于或等于最大学号！请重新输入。")
+            w = True
+    except:
+        tkinter.messagebox.showerror("错误", "您输入的学号范围不是整数！请重新输入。")
+        w = True
+    if not w:
         try:
-            min_number = int(min_entry.get())
-            max_number = int(max_entry.get())
-            if min_number >= max_number:
-                tkinter.messagebox.showerror("错误", "您输入的最小学号大于或等于最大学号！请重新输入。")
-                x = True
+            # 写入范围到文件
+            with open('./ranges/range.txt', 'w') as f:
+                f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
+            range_window.destroy()
+            # 重新启动应用程序
+            os.execl(sys.executable, sys.executable, *sys.argv)
         except:
-            tkinter.messagebox.showerror("错误", "您输入的学号范围不是整数！请重新输入。")
-            x = True
-        if not x:
-            try:
-                # 写入范围到文件
-                with open('./ranges/range.txt', 'w') as f:
-                    f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
-                range_window.destroy()
-                # 重新启动应用程序
-                os.execl(sys.executable, sys.executable, *sys.argv)
-            except:
-                tkinter.messagebox.showerror("错误", "程序写入范围失败，请重新安装并不要改变预置路径！")
-        else:
-            pass
+            tkinter.messagebox.showerror("错误", "程序写入范围失败，请重新安装并不要改变预置路径！")
+    else:
+        pass
 
 
 # 创建新的抽取项目
@@ -162,7 +136,6 @@ def new_else_list():
             pickle.dump(else_files, f)
         programs_window.destroy()  # 关闭窗口
         tk.messagebox.askyesno("增加新的项目", "为了使得更改生效，请手动重启程序。")  # 提示用户重启程序使更改生效
-
 
 
 # 保存抽取项目
@@ -223,7 +196,6 @@ def load_else():
     keys_list = list(else_files.keys())  # 获取 else_files 字典的键并转换为列表赋给 keys_list
 
 
-
 # 打开修改学号范围的窗口
 def open_range_window():
     global range_window  # 使用全局变量来存储范围窗口
@@ -272,6 +244,9 @@ def open_else_window():
     button.pack()  # 将按钮放置到窗口中
 
 
+initial_x = 0
+initial_y = 0
+
 
 # 创建浮动窗口
 def create_float_window():
@@ -292,12 +267,10 @@ def create_float_window():
     root.withdraw()  # 隐藏主窗口
 
 
-
 # 检查浮动窗口是否移动了
 def has_moved(float_window):
     # 判断浮动窗口的当前位置是否和初始位置不同
     return float_window.winfo_x() != initial_x or float_window.winfo_y() != initial_y
-
 
 
 # 显示主窗口
@@ -307,7 +280,6 @@ def show_main_window(float_window):
         # 还原主窗口并销毁浮动窗口
         root.deiconify()
         float_window.destroy()
-
 
 
 # 开始拖动窗口
@@ -340,9 +312,8 @@ def draw_numbers(min_number, max_number):
     # 调用函数获取学生学号
     b = draw_student_number(min_number, max_number)
     # 计算学号范围内的学号数量
-    total_numbers = max_number - min_number + 1
-    # 计算每个学号展示的时间间隔
-    time_interval = 15 / total_numbers
+    total_numbers = b - min_number + 1
+    # 循环绘制学号
     for i in range(total_numbers):
         # 更新标签显示当前学号
         label.config(text=f"学号滚动区显示为{i + min_number}")
@@ -356,7 +327,8 @@ def draw_numbers(min_number, max_number):
         if i < total_numbers / 2:
             current_time = (7.5 / total_numbers) - ((i + 1) * (7.5 / total_numbers) / 2 / (total_numbers / 2))
         else:
-            current_time = (7.5 / total_numbers) + ((i - total_numbers / 2) * (7.5 / total_numbers) / 2 / (total_numbers / 2))
+            current_time = (7.5 / total_numbers) + (
+                    (i - total_numbers / 2) * (7.5 / total_numbers) / 2 / (total_numbers / 2))
         if current_time > 0:
             time.sleep(current_time)
 
@@ -431,7 +403,7 @@ def get_model(root):
             model = pickle.load(file)
             MS1.set(model)
             mode_combobox1.event_generate("<<ComboboxSelected>>")
-    except(FileNotFoundError):
+    except FileNotFoundError:
         pass
 
 
