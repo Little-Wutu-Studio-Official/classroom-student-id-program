@@ -1,16 +1,17 @@
 # 导入所需的库
-import threading
+import os
+import pickle
 import random
+import sys
+import threading
+import time
 import tkinter as tk
 import tkinter.messagebox
-import os
-import sys
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
 from tkinter import scrolledtext
-import time
-import pickle
-from ttkbootstrap import Style
+
+import numpy as np
+import ttkbootstrap as ttk
+from _tkinter import TclError
 
 # 初始化变量x,y
 x = None
@@ -36,65 +37,77 @@ def contains_all_numbers_between(lst, start, end):
 
 
 # 从指定范围内抽取学号
-def draw_student_number(min_number, max_number):
+def draw_student_number(min_n, max_n):
+    rng = np.random.default_rng()  # 创建随机数生成器
     # 如果避免单轮重复抽取复选框被选中（else.pickle文件中存在抽学号项目）
     if checkbutton_var.get():
+        try:
+            if_try = elselist
+        except NameError:
+            if_try = None
+            tkinter.messagebox.showerror("错误", "在启用了避免单轮重复抽取功能的情况下，请先选择一个抽取项目再抽取学号！")
         while True:
-            a = random.randint(min_number, max_number)
-            # 如果抽取到的学号已经存在于elselist中并且elselist中不包含[min_number, max_number]范围内的所有数字（即学号已被抽到过且单轮并未抽完），就什么也不做,接着抽取一个。
-            if a in elselist and not contains_all_numbers_between(elselist, min_number, max_number):
-                pass
-            # 如果elselist中包含[min_number, max_number]范围内的所有数字，显示信息，进行重置
-            elif contains_all_numbers_between(elselist, min_number, max_number):
-                elselist.clear()
-                tkinter.messagebox.showinfo("信息", "该抽取项目内所有人都已经被抽取过了，即将自动重置……")
-                else_files[combobox2.get()] = elselist
-                print(else_files)
-                save_else()
-            # 第一次抽到：
+            if if_try is not None:
+                a = rng.integers(min_n, max_n + 1)
+                # 如果抽取到的学号已经存在于elselist中并且elselist中不包含[min_n, max_n]范围内的所有数字（即学号已被抽到过且单轮并未抽完），就什么也不做,接着抽取一个。
+                if a in elselist and not contains_all_numbers_between(elselist, min_n, max_n):
+                    pass
+                # 如果elselist中包含[min_n, max_n]范围内的所有数字，显示信息，进行重置
+                elif contains_all_numbers_between(elselist, min_n, max_n):
+                    elselist.clear()
+                    tkinter.messagebox.showinfo("信息", f"项目{combobox2.get()}内所有学号都是幸运学号！该项目即将自动重置……")
+                    else_files[combobox2.get()] = elselist
+                    print(else_files)
+                    save_else()
+                # 第一次抽到：
+                else:
+                    elselist.append(a)
+                    print(elselist)
+                    else_files[combobox2.get()] = elselist
+                    print(else_files)
+                    save_else()
+                    return a
             else:
-                elselist.append(a)
-                print(elselist)
-                else_files[combobox2.get()] = elselist
-                print(else_files)
-                save_else()
-                return a
+                break
     else:
         # 如果复选框未被选中，则直接随机抽取学号
-        return random.randint(min_number, max_number)
+        return rng.integers(min_n, max_n + 1)
 
 
 # 更新抽取框
 def update_label():
-    # 获取最小值输入框中的数值
-    min_number = int(min_entry.get())
-    # 获取最大值输入框中的数值
-    max_number = int(max_entry.get())
-
+    try:
+        # 获取最小值输入框中的数值
+        min_n = int(min_entry.get())
+        # 获取最大值输入框中的数值
+        max_n = int(max_entry.get())
+    except TclError:
+        os.execl(sys.executable, sys.executable, *sys.argv)
     # 清空滚动文本框
     scroll_text.delete(1.0, tk.END)
 
     # 创建线程并启动以绘制数字
-    t = threading.Thread(target=draw_numbers, args=(min_number, max_number))
+    t = threading.Thread(target=draw_numbers, args=(min_n, max_n))
     t.start()
 
 
 # 更新标签（朴素快速模式下的）
 def update_label1():
-    # 获取最小值输入框中的数值
-    min_number = int(min_entry.get())
-    # 获取最大值输入框中的数值
-    max_number = int(max_entry.get())
+    try:
+        # 获取最小值输入框中的数值
+        min_n = int(min_entry.get())
+        # 获取最大值输入框中的数值
+        max_n = int(max_entry.get())
+    except TclError:
+        os.execl(sys.executable, sys.executable, *sys.argv)
     # 调用draw_student_number函数获取随机学号
-    drawn_number = draw_student_number(min_number, max_number)
+    drawn_number = draw_student_number(min_n, max_n)
     # 配置标签文本显示被抽中的学号
     label.config(text=f"被抽中的学号是: {drawn_number}")
 
 
 # 保存范围设置
 def save_range():
-    global max_number, min_number
-    w = False
     # 检查是否抽取项目
     if else_files != {}:
         # 提示用户保存
@@ -106,23 +119,155 @@ def save_range():
         min_number = int(min_entry.get())
         max_number = int(max_entry.get())
         if min_number >= max_number:
-            tkinter.messagebox.showerror("错误", "您输入的最小学号大于或等于最大学号！请重新输入。")
-            w = True
-    except:
-        tkinter.messagebox.showerror("错误", "您输入的学号范围不是整数！请重新输入。")
-        w = True
-    if not w:
-        try:
-            # 写入范围到文件
-            with open('./ranges/range.txt', 'w') as f:
-                f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
+            tkinter.messagebox.showerror("错误", "您输入的起始学号大于结束学号！请重新输入。")
+        else:
+            try:
+                # 写入范围到文件
+                with open('./ranges/range.txt', 'w') as f:
+                    f.write(f"{min_number}\n{max_number}\n{initial_x}\n{initial_y}")
+            except PermissionError:
+                tkinter.messagebox.showerror("错误",
+                                             "程序写入范围失败，可能是没有权限访问数据，请尝试以管理员身份运行程序或重新安装程序。")
             range_window.destroy()
             # 重新启动应用程序
             os.execl(sys.executable, sys.executable, *sys.argv)
-        except:
-            tkinter.messagebox.showerror("错误", "程序写入范围失败，请重新安装并不要改变预置路径！")
+    except ValueError:
+        tkinter.messagebox.showerror("错误", "您输入的学号范围不是整数！请重新输入。")
+
+
+# 修改项目名称
+def change_program():
+    # 获取选择框中的名称
+    name = combobox_change_or_delete.get()
+    # 如果名称为空，提示用户选择项目
+    if name == "":
+        tkinter.messagebox.showerror("错误", "请选择一个项目！")
     else:
-        pass
+        # 弹出修改项目名称窗口
+        change_window = tk.Toplevel()
+        change_window.grab_set()
+        change_window.title("修改项目名称")
+        label_change = tk.Label(change_window, text="请输入新的项目名称：")
+        label_change.pack()
+        # 创建输入框
+        new_name = tk.StringVar()
+        new_name_entry = tk.Entry(change_window, textvariable=new_name)
+        new_name_entry.pack()
+        # 创建确认按钮
+        do = tk.Button(change_window, text="确认", command=lambda: change_name(new_name.get(), name))
+        do.pack()
+
+        def change_name(new_name_str, old_name_str):
+            if new_name_str == "":
+                tkinter.messagebox.showerror("错误", "请输入新的项目名称！")
+            else:
+                # 如果名称已存在，提示用户重新输入
+                if new_name_str in else_files:
+                    tkinter.messagebox.showerror("错误", "该名称已存在，请重新输入！")
+                else:
+                    # 修改项目名称
+                    else_files[new_name_str] = else_files.pop(old_name_str)
+                    # 保存修改后的项目名称
+                    save_else()
+                    # 关闭窗口
+                    change_window.destroy()
+                    # 重新加载抽取项目
+                    load_else()
+                    combobox2.config(values=keys_list)
+                    # 重新启动抽取项目管理窗口
+                    programs_window.destroy()
+                    open_programs_window()
+                    checkbutton_var.set(True)
+                    on_else_change()
+                    # 选择为刚刚修改的项目
+                    combobox2.current(keys_list.index(new_name_str))
+                    # 告知用户操作成功
+                    tkinter.messagebox.showinfo("成功", "已成功修改项目名称！")
+
+
+def delete_program():
+    # 获取选择框中的名称
+    name = combobox_change_or_delete.get()
+    # 如果名称为空，提示用户选择项目
+    if name == "":
+        tkinter.messagebox.showerror("错误", "请选择一个项目！")
+    else:
+        # 弹出删除项目窗口
+        delete_result = tkinter.messagebox.askyesno("删除项目", "确认删除该项目？")
+        if delete_result:
+            # 删除项目
+            else_files.pop(name)
+            save_else()
+            tkinter.messagebox.showinfo("成功", "已成功删除该项目！")
+            load_else()  # 重新加载抽取项目
+            combobox2.config(values=keys_list)  # 更新下拉列表
+            combobox2.set("在此处选择抽取项目")
+            programs_window.destroy()
+
+
+def review_lucky_people(program):
+    if program == "":
+        tkinter.messagebox.showerror("错误", "请选择一个项目！")
+    else:
+        # 弹出查看幸运学号窗口
+        lucky_window = tk.Toplevel()
+        lucky_window.grab_set()
+        lucky_window.title(f"查看项目”{program}“中已经抽到的幸运学号")
+        # 读取该项目中已经抽到的幸运学号
+        lucky_list = else_files[program]
+        lucky_window.iconbitmap('./ico.ico')  # 设置窗口图标
+
+        def calculate_percentage(lst1, min_val1, max_val1):
+            total_range = max_val1 - min_val1 + 1
+            count_in_list = len([a for a in lst1 if min_val1 <= a <= max_val1])
+            return round((count_in_list / total_range) * 100, 2)
+
+        def create_groups(min_val1, max_val1):
+            groups1 = []
+            for a in range(min_val1, max_val1 + 1, 20):
+                groups1.append((a, min(a + 19, max_val1)))
+            return groups1
+
+        def create_buttons(frame, lst1, start, end):
+            for a in range(start, end + 1):
+                btn = ttk.Button(frame, text=str(a), width=5)
+                btn.grid(row=((a - start) // 5) % 4, column=(a - start) % 5, padx=5, pady=5)
+                if a not in lst1:
+                    btn.config(bootstyle="outline")
+
+        def on_select(event):
+            print(event)
+            selected = combo.get()
+            start, end = map(int, selected.split('-'))
+            for widget in button_frame.winfo_children():
+                widget.destroy()
+            create_buttons(button_frame, lst, start, end)
+
+        min_val = int(min_entry.get())
+        max_val = int(max_entry.get())
+        lst = lucky_list
+        percentage = calculate_percentage(lst, min_val, max_val)
+        Meter = ttk.Meter(lucky_window,
+                          metersize=250,
+                          amountused=percentage,
+                          textright="%",
+                          subtext=f'项目“{program}”,\n已产生{len(lst)}个幸运学号',
+                          interactive=False,
+                          meterthickness=20,
+                          stripethickness=0)
+        Meter.grid(row=0, column=0, columnspan=3, sticky=tk.NSEW)
+        groups = create_groups(min_val, max_val)
+        combo_values = [f"{start}-{end}" for start, end in groups]
+        combo = ttk.Combobox(lucky_window, values=combo_values)
+        combo.grid(row=1, column=0, columnspan=3, sticky=tk.NSEW)
+        combo.bind("<<ComboboxSelected>>", on_select)
+        combo.current(0)
+        button_frame = ttk.Frame(lucky_window)
+        button_frame.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW)
+        combo.event_generate("<<ComboboxSelected>>")
+        ttk.Label(lucky_window, text="图例:").grid(row=3, column=0, sticky=tk.NSEW)
+        ttk.Button(lucky_window, text="未抽到学号",  bootstyle="outline").grid(row=3, column=1, sticky=tk.NSEW)
+        ttk.Button(lucky_window, text="已抽到学号").grid(row=3, column=2, sticky=tk.NSEW)
 
 
 # 创建新的抽取项目
@@ -130,12 +275,27 @@ def new_else_list():
     name = name_else.get()
     if name in else_files:  # 检查名称是否已存在
         tkinter.messagebox.showerror("错误", "您输入了一个已经存在的名称，请重新输入")
+    elif name == "":  # 检查名称是否为空
+        tkinter.messagebox.showerror("错误", "请输入项目名称！")
     else:
         else_files[name] = []  # 添加新的项目
         with open('./ranges/else.pickle', 'wb') as f:  # 保存项目到文件
             pickle.dump(else_files, f)
         programs_window.destroy()  # 关闭窗口
-        tk.messagebox.askyesno("增加新的项目", "为了使得更改生效，请手动重启程序。")  # 提示用户重启程序使更改生效
+        load_else()  # 重新加载抽取项目
+        if len(keys_list) == 1:
+            tkinter.messagebox.showinfo("首次创建？",
+                                        "亲爱的用户\n在使用您创建的项目进行数次抽取后，\n您可以进入抽取项目管理系统查看统计数据哦！")
+        checkbutton_var.set(True)
+        on_else_change()
+        XM.set("请选择一个抽取项目")
+        combobox2.config(values=keys_list)  # 更新下拉列表
+        # 选择为刚刚创建的项目
+        combobox2.current(len(keys_list) - 1)
+        # 激活选择项目事件
+        combobox2.event_generate("<<ComboboxSelected>>")
+        tkinter.messagebox.showinfo("注意",
+                                    "抽取项目创建成功！\n\n但请您注意：\n每次启动程序时，如果您希望使用避免单轮重复抽取和统计功能\n请务必将避免重复抽取开关打开！")
 
 
 # 保存抽取项目
@@ -162,7 +322,7 @@ def load_range():
             # 将初始值转换为整数
             initial_x = int(initial_x)
             initial_y = int(initial_y)
-        except:
+        except ValueError:
             with open('./ranges/range.txt', 'r') as f:
                 # 读取学号范围文件中的最小值和最大值
                 min_number, max_number = f.read().splitlines()
@@ -180,17 +340,18 @@ def load_range():
             open_range_window()
         else:
             # 如果用户选择否，退出程序
-            os.execl(sys.executable, *sys.argv)
+            root.destroy()
 
 
 # 读取抽取项目
+# noinspection PyGlobalUndefined
 def load_else():
     global else_files, keys_list
+    else_files = {}  # 设置空字典
     if os.path.exists('./ranges/else.pickle'):  # 如果 else.pickle 文件存在
         with open('./ranges/else.pickle', 'rb') as f:  # 以只读方式打开 else.pickle 文件
             else_files = pickle.load(f)  # 加载文件内容到 else_files
     else:
-        else_files = {}  # 设置空字典
         with open('./ranges/else.pickle', 'wb') as f:  # 以二进制写入方式打开 else.pickle 文件
             pickle.dump(else_files, f)  # 将空字典保存到文件中
     keys_list = list(else_files.keys())  # 获取 else_files 字典的键并转换为列表赋给 keys_list
@@ -205,15 +366,13 @@ def open_range_window():
     range_window.grab_set()  # 给范围窗口设置抓取焦点
     range_window.iconbitmap('./ico.ico')  # 设置范围窗口的图标
 
-    label = tk.Label(range_window, text="最小学号: ")  # 创建标签，用于显示"最小学号"文本
-    label.pack()  # 将标签放置到范围窗口中
+    tk.Label(range_window, text="最小学号: ").pack()
 
     global min_entry  # 使用全局变量来存储最小学号的输入框
     min_entry = tk.Entry(range_window)  # 创建一个用于输入最小学号的输入框
     min_entry.pack()  # 将输入框放置到范围窗口中
 
-    label = tk.Label(range_window, text="最大学号: ")  # 创建标签，用于显示"最大学号"文本
-    label.pack()  # 将标签放置到范围窗口中
+    tk.Label(range_window, text="最大学号: ").pack()  # 创建标签，用于显示"最大学号"文本
 
     global max_entry  # 使用全局变量来存储最大学号的输入框
     max_entry = tk.Entry(range_window)  # 创建一个用于输入最大学号的输入框
@@ -223,25 +382,68 @@ def open_range_window():
     button.pack()  # 将按钮放置到范围窗口中
 
 
-# 打开创建新的抽取项目的窗口
-def open_else_window():
+# 打开管理抽取项目的窗口
+def open_programs_window():
     # 声明全局变量 programs_window
     global programs_window
     root.attributes('-topmost', False)  # 将根窗口置于最顶层
     programs_window = tk.Toplevel(root)  # 创建一个新的顶级窗口
-    programs_window.title("创建一个新的抽取项目")  # 设置窗口标题
+    programs_window.title("抽取项目管理系统")  # 设置窗口标题
     programs_window.grab_set()  # 让此窗口获得焦点
     programs_window.iconbitmap('./ico.ico')  # 设置窗口图标
+    for a in range(3):
+        programs_window.rowconfigure(a, weight=1)
+    Main_label = tk.Label(programs_window, text="抽取项目管理系统", font=("楷体", 30))
+    Main_label.grid(row=0, column=0, columnspan=3, sticky=tk.NSEW)
 
-    label = tk.Label(programs_window, text="请输入名称")  # 创建标签
-    label.pack()  # 将标签放置到窗口中
+    change = ttk.Labelframe(programs_window, text="修改/删除项目：")
+    change.grid(row=2, column=0, columnspan=1, sticky=tk.NSEW)
+    for a in range(3):
+        change.rowconfigure(a, weight=1)
+    program_label = tk.Label(change, text="选择要修改或删除的项目：", font=("楷体", 20))
+    program_label.grid(row=0, column=0, columnspan=2, sticky="NSEW")
+    # 创建一个下拉列表，用于选择要修改或删除的项目
+    global combobox_change_or_delete  # 声明全局变量 combobox_change_or_delete
+    combobox_change_or_delete = ttk.Combobox(change, values=keys_list)
+    combobox_change_or_delete.grid(row=1, columnspan=2, sticky="NSEW")
+    # 创建按钮，用于修改或删除项目
+    button_change_or_delete = ttk.Button(change, text="修改项目名", command=change_program)
+    button_change_or_delete.grid(row=2, column=0, columnspan=1, sticky="NSEW")
+    # 创建按钮，用于删除该项目
+    button_delete = ttk.Button(change, text="删除项目", command=delete_program, style="NSEW")
+    button_delete.grid(row=2, column=1, columnspan=1)
 
+    new = ttk.Labelframe(programs_window, text="新建项目：")
+    new.grid(row=1, column=0, columnspan=1, sticky=tk.NSEW)
+    name_label = tk.Label(new, text="输入要创建的项目的名称：", font=("楷体", 20))
+    name_label.grid(row=0, column=0, columnspan=1, sticky="NSEW")
     global name_else  # 声明全局变量 name_else
-    name_else = tk.Entry(programs_window)  # 创建输入框
-    name_else.pack()  # 将输入框放置到窗口中
+    name_else = tk.Entry(new)  # 创建输入框
+    name_else.grid(row=1, columnspan=1, sticky="NSEW")  # 将输入框放置到窗口中
+    button = ttk.Button(new, text="创建", command=new_else_list)  # 创建按钮并关联回调函数
+    button.grid(row=2, columnspan=1, sticky="NSEW")  # 将按钮放置到窗口中
 
-    button = ttk.Button(programs_window, text="创建", command=new_else_list)  # 创建按钮并关联回调函数
-    button.pack()  # 将按钮放置到窗口中
+    review = ttk.Labelframe(programs_window, text="查看已抽到的幸运儿：")
+    review.grid(row=3, column=0, columnspan=1, sticky=tk.NSEW)
+    for a in range(3):
+        review.rowconfigure(a, weight=1)
+    lucky_label = tk.Label(review, text="选择要查看幸运儿的项目：", font=("楷体", 20))
+    lucky_label.grid(row=0, column=0, columnspan=1, sticky="NSEW")
+    # 创建一个下拉列表，用于选择要查看的项目
+    global combobox_to_be_reviewed  # 声明全局变量 combobox_to_be_reviewed
+    combobox_to_be_reviewed = ttk.Combobox(review, values=keys_list)
+    combobox_to_be_reviewed.grid(row=1, columnspan=1, sticky="NSEW")
+    # 创建按钮，用于查看已抽到的幸运儿
+    button_review = ttk.Button(review, text="查看", command=lambda: review_lucky_people(combobox_to_be_reviewed.get()))
+    button_review.grid(row=2, columnspan=1, sticky="NSEW")
+    if not keys_list:
+        programs_window.title("创建一个新的抽取项目")
+        change.grid_forget()
+        review.grid_forget()
+        Label_welcome = ttk.Label(programs_window,
+                                  text="初次进入项目管理系统？\n抽取项目的统计分析等功能\n还等待您的发现。\n请先创建一个抽取项目吧！",
+                                  font=("楷体", 20))
+        Label_welcome.grid(row=2, column=0, sticky=tk.NSEW)
 
 
 initial_x = 0
@@ -259,10 +461,9 @@ def create_float_window():
 
     button = ttk.Button(float_window, text="显示抽学号程序", command=lambda: show_main_window(float_window))
     button.pack(fill=tk.BOTH, expand=True)  # 将按钮放入浮动窗口并填充整个窗口
-
     # 使窗口可拖动
-    float_window.bind("<ButtonPress-1>", lambda event: start_move(event, float_window))  # 绑定鼠标左键按下事件
-    float_window.bind("<ButtonRelease-1>", lambda event: stop_move(event, float_window))  # 绑定鼠标左键释放事件
+    float_window.bind("<ButtonPress-1>", lambda event: start_move(event))  # 绑定鼠标左键按下事件
+    float_window.bind("<ButtonRelease-1>", lambda event: stop_move(float_window))  # 绑定鼠标左键释放事件
     float_window.bind("<B1-Motion>", lambda event: do_move(event, float_window))  # 绑定鼠标拖动事件
     root.withdraw()  # 隐藏主窗口
 
@@ -283,14 +484,14 @@ def show_main_window(float_window):
 
 
 # 开始拖动窗口
-def start_move(event, float_window):
+def start_move(event):
     global x, y
     x = event.x
     y = event.y
 
 
 # 停止拖动窗口
-def stop_move(event, float_window):
+def stop_move(float_window):
     global x, y
     x = None
     y = None
@@ -314,90 +515,96 @@ def draw_numbers(min_number, max_number):
     # 计算学号范围内的学号数量
     total_numbers = b - min_number + 1
     # 循环绘制学号
-    for i in range(total_numbers):
+    for now_number in range(total_numbers):
         # 更新标签显示当前学号
-        label.config(text=f"学号滚动区显示为{i + min_number}")
+        label.config(text=f"学号滚动区显示为{now_number + min_number}")
         # 在滚动文本框中插入当前学号信息
-        scroll_text.insert(tk.END, f"当前学号是: {i + min_number}\n")
+        scroll_text.insert(tk.END, f"当前学号是: {now_number + min_number}\n")
         # 滚动文本框滚动到末尾
         scroll_text.see(tk.END)
         # 更新界面
         root.update()
         # 计算当前学号展示的时间
-        if i < total_numbers / 2:
-            current_time = (7.5 / total_numbers) - ((i + 1) * (7.5 / total_numbers) / 2 / (total_numbers / 2))
+        if now_number < total_numbers / 2:
+            current_time = (7.5 / total_numbers) - ((now_number + 1) * (7.5 / total_numbers) / 2 / (total_numbers / 2))
         else:
             current_time = (7.5 / total_numbers) + (
-                    (i - total_numbers / 2) * (7.5 / total_numbers) / 2 / (total_numbers / 2))
+                    (now_number - total_numbers / 2) * (7.5 / total_numbers) / 2 / (total_numbers / 2))
         if current_time > 0:
             time.sleep(current_time)
 
 
 # 模式改变事件处理
+# noinspection PyUnusedLocal
 def on_mode_change(event):
     selected_mode = mode_combobox1.get()
     MS1.set(selected_mode)
     if selected_mode == "炫酷可视模式":
         try:
-            buttona.pack_forget()
-            buttonb.pack_forget()
-        except:
+            buttona.grid_forget()
+            buttonb.grid_forget()
+        except TclError:
             pass
-        label.pack()
-        button_get_ps.pack_forget()
-        button_get_xk.pack()
-        buttona.pack()
-        buttonb.pack()
-        scroll_text.pack()
+        label.grid(row=0, column=0, columnspan=1, sticky=tk.NSEW)
+        button_get_ps.grid_forget()
+        button_get_xk.grid(row=3, column=0, columnspan=1, sticky=tk.NSEW)
+        buttona.grid(row=4, column=0, columnspan=1, sticky=tk.NSEW)
+        buttonb.grid(row=5, column=0, columnspan=1, sticky=tk.NSEW)
+        scroll_text.grid(row=6, column=0, columnspan=2, sticky=tk.NSEW)
     else:
         try:
-            buttona.pack_forget()
-            buttonb.pack_forget()
-        except:
+            buttona.grid_forget()
+            buttonb.grid_forget()
+        except TclError:
             pass
-        scroll_text.pack_forget()
-        button_get_xk.pack_forget()
-        label.pack()
-        button_get_ps.pack()
-        buttona.pack()
-        buttonb.pack()
+        scroll_text.grid_forget()
+        button_get_xk.grid_forget()
+        label.grid(row=0, column=0, columnspan=1, sticky=tk.NSEW)
+        button_get_ps.grid(row=3, column=0, columnspan=1, sticky=tk.NSEW)
+        buttona.grid(row=4, column=0, columnspan=1, sticky=tk.NSEW)
+        buttonb.grid(row=5, column=0, columnspan=1, sticky=tk.NSEW)
     save_model(selected_mode)
 
 
 # 抽取项目选择状态变化事件处理
 def on_else_change():
     if checkbutton_var.get():
-        combobox2.pack(side=tk.BOTTOM, fill=tk.X)
-        buttonc.pack()
+        combobox2.grid(row=2, column=0, columnspan=1, sticky=tk.NSEW)
+        load_else()
+        if not keys_list:
+            tkinter.messagebox.showwarning("警告", "系统检测到您目前没有抽取项目，\n请在抽取项目管理中新建一个。")
+            open_programs_window()
     else:
-        combobox2.pack_forget()
-        buttonc.pack_forget()
+        combobox2.grid_forget()
 
 
 # 抽取项目列表变化事件处理
+# noinspection PyUnusedLocal
 def on_else_list_change(event):
     global elselist
-    selected_mode = combobox2.get()
-    XM.set(selected_mode)
-    elselist = else_files[selected_mode]
+    selected_mode = XM.get()
+    if selected_mode == "在此处选择抽取项目":
+        pass
+    else:
+        elselist = else_files[selected_mode]
 
 
 def get_saved_window_position(window):
     try:
         with open('./ranges/window_position.pickle', 'rb') as file:
-            x, y = pickle.load(file)
-            window.geometry("+{}+{}".format(x, y))
-    except (FileNotFoundError, ValueError):
+            x_place, y_place = pickle.load(file)
+            window.geometry("+{}+{}".format(x_place, y_place))
+    except FileNotFoundError:
         pass
 
 
-def save_window_position(window, event):
-    x, y = window.winfo_x(), window.winfo_y()
+def save_window_position(window):
+    x_place, y_place = window.winfo_x(), window.winfo_y()
     with open('./ranges/window_position.pickle', 'wb') as file:
-        pickle.dump((x, y), file)
+        pickle.dump((x_place, y_place), file)
 
 
-def get_model(root):
+def get_model():
     try:
         with open('./ranges/model.pickle', 'rb') as file:
             model = pickle.load(file)
@@ -412,45 +619,51 @@ def save_model(model):
         pickle.dump(model, file)
 
 
+keys_list = []
 tem = ["superhero", "vapor", "cyborg", "solar", "cosmo", "flatly", "journal", "litera", "minty", "pulse", "morph"]
 root = ttk.Window(themename=tem[random.randint(0, 10)])
+get_saved_window_position(root)
 root.title("抽取学号")
 root.attributes('-topmost', True)
 root.iconbitmap('./ico.ico')
-root.bind('<Configure>', lambda event: save_window_position(root, event))
-root.bind('<Map>', lambda event: get_saved_window_position(root))
+root.overrideredirect(False)
+root.resizable(0, 0)
+root.bind('<Configure>', lambda event: save_window_position(root))
 MS1 = tk.StringVar()
 MS1.set("请选择模式")
 XM = tk.StringVar()
 XM.set("在此处选择抽取项目")
-label = tk.Label(root, text="被抽中的学号是: ")
-button_get_xk = ttk.Button(root, text="抽取学号", command=update_label, bootstyle="outline", width=30)
-button_get_ps = ttk.Button(root, text="抽取学号", command=update_label1, bootstyle="outline", width=30)
+for i in range(9):
+    root.rowconfigure(i, weight=1)
+label = tk.Label(root, text="被抽中的学号是: ", font=("KaiTi", 20))
+button_get_xk = ttk.Button(root, text="抽取学号", command=update_label)
+button_get_ps = ttk.Button(root, text="抽取学号", command=update_label1)
 
-buttona = ttk.Button(root, text="点击缩小窗口", command=create_float_window, bootstyle="outline", width=30)
+buttona = ttk.Button(root, text="点击缩小窗口", command=create_float_window)
 
-buttonb = ttk.Button(root, text="修改学号范围", command=open_range_window, bootstyle="outline", width=30)
+buttonb = ttk.Button(root, text="修改学号范围", command=open_range_window)
 
-buttonc = ttk.Button(root, text="创建一个新的抽取项目", command=open_else_window, bootstyle="outline", width=30)
 min_entry = tk.Entry(root)
 max_entry = tk.Entry(root)
 
-scroll_text = scrolledtext.ScrolledText(root, height=5, width=30)
+scroll_text = scrolledtext.ScrolledText(root, height=3, width=10, font=("KaiTi", 20))
 
 load_range()
 load_else()
 
-credit_label = tk.Label(root, text="制作：小於菟工作室（刘贞、王一格）", font=("KaiTi", 10), anchor='se')
-credit_label.pack(side=tk.BOTTOM, fill=tk.X)
+button_program = ttk.Button(root, text="抽取项目管理系统", command=open_programs_window)
+button_program.grid(row=7, columnspan=1, sticky=tk.NSEW)
+credit_label = tk.Label(root, text="制作：小於菟工作室（刘贞、王一格）", font=("KaiTi", 10))
+credit_label.grid(row=9, column=0, columnspan=1, sticky=tk.NSEW)
 
 mode_combobox1 = ttk.Combobox(root, values=["炫酷可视模式", "朴素快速模式"], textvariable=MS1)
-mode_combobox1.pack(side=tk.BOTTOM, fill=tk.X)
+mode_combobox1.grid(row=8, column=0, columnspan=1, sticky=tk.NSEW)
 mode_combobox1.bind("<<ComboboxSelected>>", on_mode_change)
-get_model(root)
-checkbutton_var = tk.BooleanVar(value=False)
+get_model()
+checkbutton_var = tk.BooleanVar()
 checkbutton = ttk.Checkbutton(root, text="启用避免单轮重复抽取", variable=checkbutton_var, command=on_else_change,
                               bootstyle="square-toggle")
-checkbutton.pack()
+checkbutton.grid(row=1, column=0, columnspan=1, sticky=tk.NSEW)
 combobox2 = ttk.Combobox(root, values=keys_list, textvariable=XM)
 combobox2.bind("<<ComboboxSelected>>", on_else_list_change)
 root.mainloop()
