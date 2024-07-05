@@ -183,6 +183,7 @@ def save_range(min_num, max_num) -> bool:
         except ValueError:
             tkinter.messagebox.showerror("错误", "您输入的学号范围不是正整数！请重新输入。")
             return False
+
     try:
         if min_num == min_number and max_num == max_number:
             result_save = True
@@ -579,6 +580,7 @@ def draw_numbers(min_nu, max_nu):
             else:
                 result[now] = s + d * (now - math.floor(number_of_data / 2))
         return result
+
     if total_numbers <= time_show / 2:
         # 直接将被抽取的幸运学号显示出来
         if b < 10:
@@ -891,6 +893,14 @@ def open_settings_window():
     Button_to_save.grid(row=2, column=0, columnspan=1, sticky=tk.NSEW)
 
 
+def open_icon_about():
+    tkinter.messagebox.showinfo("本程序图标",
+                                "本程序新图标来自：Grand Iconic"
+                                "来源网址：https://www.freepik.com/icon/shuffle_15376979#fromView=search&page"
+                                "=1&position=77&uuid=19b57b15-2e62-487b-91ed-03fa6c394c61"
+                                )
+
+
 rng = np.random.default_rng()  # 创建随机数生成器
 keys_list = []
 load_settings()
@@ -926,8 +936,10 @@ button_program.grid(row=5, columnspan=1, sticky=tk.NSEW)
 
 button_settings = ttk.Button(root, text="课堂抽学号小程序设置", command=open_settings_window, bootstyle="outline")
 button_settings.grid(row=6, columnspan=1, sticky=tk.NSEW)
-credit_label = tk.Label(root, text="制作：小於菟工作室（刘贞、王一格）", font=("KaiTi", 10))
-credit_label.grid(row=8, column=0, columnspan=1, sticky=tk.NSEW)
+credit_Button = tk.Button(root, text="制作：小於菟工作室（刘贞、王一格）")
+credit_Button.grid(row=8, column=0, columnspan=1, sticky=tk.NSEW)
+Button_icon = tk.Button(root, text="本程序新图标来自：Grand Iconic", command=open_icon_about)
+Button_icon.grid(row=9, column=0, columnspan=1, sticky=tk.NSEW)
 
 mode_combobox1 = ttk.Combobox(root, values=["炫酷可视模式", "朴素快速模式"], textvariable=MS1)
 mode_combobox1.grid(row=7, column=0, columnspan=1, sticky=tk.NSEW)
