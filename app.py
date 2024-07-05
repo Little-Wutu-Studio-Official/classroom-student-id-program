@@ -221,15 +221,21 @@ def change_program():
         change_window.grab_set()
         change_window.title("修改项目名称")
         change_window.iconbitmap('./ico.ico')  # 设置窗口图标
-        label_change = tk.Label(change_window, text="请输入新的项目名称：")
-        label_change.pack()
+        # 置顶修改项目名称的窗口
+        change_window.attributes('-topmost', True)
+        # 显示项目名称
+        label_name = tk.Label(change_window, text=f"修改抽取项目“{name}”的名称", font=("KaiTi", 20))
+        label_name.pack(fill = tk.X)
+
+        label_change = tk.Label(change_window, text="请在下方输入该项目的新名称并确定即可完成更改。", font=("KaiTi", 10))
+        label_change.pack(fill= tk.X)
         # 创建输入框
         new_name = tk.StringVar()
         new_name_entry = tk.Entry(change_window, textvariable=new_name)
-        new_name_entry.pack()
+        new_name_entry.pack(fill=tk.X)
         # 创建确认按钮
         do = tk.Button(change_window, text="确认", command=lambda: change_name(new_name.get(), name))
-        do.pack()
+        do.pack(fill=tk.X)
 
         def change_name(new_name_str, old_name_str):
             if new_name_str == "":
@@ -895,8 +901,8 @@ def open_settings_window():
 
 def open_icon_about():
     tkinter.messagebox.showinfo("本程序图标",
-                                "本程序新图标来自：Grand Iconic"
-                                "来源网址：https://www.freepik.com/icon/shuffle_15376979#fromView=search&page"
+                                "本程序新图标来自：Grand Iconic\n"
+                                "来源网址：\nhttps://www.freepik.com/icon/shuffle_15376979#fromView=search&page"
                                 "=1&position=77&uuid=19b57b15-2e62-487b-91ed-03fa6c394c61"
                                 )
 
